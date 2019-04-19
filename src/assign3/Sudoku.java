@@ -54,6 +54,16 @@ public class Sudoku {
 	public static final int PART = 3;  // size of each 3x3 part
 	public static final int MAX_SOLUTIONS = 100;
 	
+	
+	// private instance variables
+	private int [][] sudGrid;
+	private int [][] solutionGrid;
+	private List<Spot> spots;
+	private int solutions;
+	private long msRes;
+
+	
+	
 	// Provided various static utility methods to
 	// convert data formats to int[][] grid.
 	
@@ -126,7 +136,7 @@ public class Sudoku {
 	// solving hardGrid.
 	public static void main(String[] args) {
 		Sudoku sudoku;
-		sudoku = new Sudoku(hardGrid);
+		sudoku = new Sudoku(easyGrid);
 		
 		System.out.println(sudoku); // print the raw problem
 		int count = sudoku.solve();
@@ -136,30 +146,206 @@ public class Sudoku {
 	}
 	
 	
-	
-
 	/**
 	 * Sets up based on the given ints.
 	 */
 	public Sudoku(int[][] ints) {
-		// YOUR CODE HERE
+		sudGrid = new int[SIZE][SIZE];
+		spots = new ArrayList<Spot>();
+		solutionGrid = new int[SIZE][SIZE];
+		solutions = 0;
+		msRes = 0;
+		
+		for(int row = 0; row < SIZE; row++) {
+			for(int col = 0; col < SIZE; col++) {
+				sudGrid[row][col] = ints[row][col];
+				if(sudGrid[row][col] == 0) {
+					// create spots for only 0 values
+					Spot newSpot = new Spot(row, col);
+					spots.add(newSpot);
+				}
+			}
+		}
+		
+		// sort spots using ranks
+		Collections.sort(spots);
 	}
 	
+	/**
+	 * Alternate constructor.
+	 */
+	public Sudoku(String text) {
+		this(textToGrid(text));
+	}
 	
 	
 	/**
 	 * Solves the puzzle, invoking the underlying recursive search.
 	 */
 	public int solve() {
-		return 0; // YOUR CODE HERE
+		long startTime = System.currentTimeMillis();
+		solveHelper(0);
+		long endTime = System.currentTimeMillis();
+		msRes = endTime - startTime;
+		return solutions;
 	}
 	
+	
+	// helper recursion function, which counts solutions
+	public void solveHelper(int index) {
+		if(solutions >= MAX_SOLUTIONS) return;
+		if(index > spots.size()) return;
+		
+		// if index is spots.size that means there is no spot with value 0
+		// and sudoku is solved
+		if(index == spots.size()) {
+			if(solutions == 0) getSolutionGrid();
+			solutions++;
+			return;
+		}
+		
+		// find possible values for current Spot
+		Spot currSpot = spots.get(index);
+		if(currSpot.getValue() == 0) {
+			Set<Integer> validSet = currSpot.getValidSet();
+			
+			for(Integer newVal : validSet) {
+				currSpot.set(newVal);
+				solveHelper(index + 1);
+			}
+			currSpot.set(0);				
+		}
+		
+	}
+	
+	// writes solution from sudGrid into solutionGrid
+	private void getSolutionGrid() {
+		for(int row = 0; row < SIZE; row++) {
+			for(int col = 0; col < SIZE; col++) {
+				solutionGrid[row][col] = sudGrid[row][col];
+			}
+		}
+	}
+	
+	
+	// text form of the first one found 
+	// if there is no solution it return empty string
 	public String getSolutionText() {
-		return ""; // YOUR CODE HERE
+		if(solutions > 0) {
+			Sudoku solutionSud = new Sudoku(solutionGrid); 
+			return solutionSud.toString();			
+		} else {
+			return "";
+		}
 	}
 	
+	// returns the elapsed time spent in the solve method
 	public long getElapsed() {
-		return 0; // YOUR CODE HERE
+		return msRes;
+	}
+	
+	
+	// override toString method
+	@Override
+	public String toString() {
+		StringBuilder buffer = new StringBuilder();
+		
+		for (int row = 0; row < SIZE; row++) {
+			boolean notFirst = false;
+			for (int col = 0; col < SIZE; col++) {
+				int value = sudGrid[row][col];
+				if (notFirst) {
+					buffer.append(' ');
+				} else {
+					notFirst = true;
+				}
+				
+				buffer.append(value);
+			}
+			buffer.append("\n");
+		}
+		
+		return (buffer.toString());
+	}
+	
+	// inner spot class
+	private class Spot implements Comparable<Spot>{
+		private int row;
+		private int col;
+		private int value;
+		private int ranking; 
+		
+		// constructor of the spot class
+		public Spot(int row, int col) {
+			this.row = row;
+			this.col = col;
+			
+			value = 0;
+			ranking = getValidSet().size();
+		}
+		
+		
+		// returns set of the possible values for this spot
+		public Set<Integer> getValidSet() {
+			Set<Integer> resultSet = new HashSet<Integer>();
+			// adds all values in the set
+			for(int val = 1; val <= 9; val++) {
+				resultSet.add(val);
+			}
+			
+			// remove values which occurs in the same row
+			for(int currRow = 0; currRow < SIZE; currRow++) {
+				resultSet.remove(sudGrid[currRow][col]);
+			}
+			
+			// remove values which occurs in the same column
+			for(int currCol = 0; currCol < SIZE; currCol++) {
+				resultSet.remove(sudGrid[row][currCol]);
+			}
+			
+			// remove values which occurs in the same part
+			for(int newRow = 0; newRow < SIZE; newRow += 3) {
+				for(int newCol = 0; newCol < SIZE; newCol += 3) {
+					if(inPart(newRow, newCol)) {	
+						for(int i = newRow; i < newRow + PART; i++) {
+							for(int j = newCol; j < newCol + PART; j++) {
+								resultSet.remove(sudGrid[i][j]);								
+							}
+						}
+					}
+				}
+			}
+			
+			return resultSet;
+		}
+		
+		
+		// returns true if the spot is in this part
+		private boolean inPart(int partR, int partC) {
+			return (row >= partR && row < partR + PART && col >= partC && col < partC + PART);
+		}
+		
+		// changes value of the spot
+		public void set(int value) {
+			this.value = value;
+			sudGrid[row][col] = value;
+		}
+		
+		// returns value of this spot.
+		public int getValue() {
+			return value;
+		}
+		
+		// returns rank of spot. which is possible values for this point.
+		public int getRank() {
+			return ranking;
+		}
+		
+		// compare method for sorting
+		@Override
+	    public int compareTo(Spot otherSpot) {
+	        return (this.getRank() - otherSpot.getRank());
+	    }
 	}
 
 }
