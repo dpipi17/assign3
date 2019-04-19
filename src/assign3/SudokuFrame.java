@@ -13,11 +13,33 @@ import java.awt.event.*;
 	public SudokuFrame() {
 		super("Sudoku Solver");
 		
-		// YOUR CODE HERE
+		JComponent content = (JComponent) getContentPane();
+		content.setLayout(new BorderLayout(4, 4));
+		
+		
+		JComponent areas = new JPanel();
+		areas.setLayout(new BoxLayout(areas, BoxLayout.X_AXIS));
+		content.add(areas);
+		
+		JTextArea puzzleArea = new JTextArea(15, 20);
+		puzzleArea.setBorder(new TitledBorder("Puzzle"));
+		areas.add(puzzleArea, BorderLayout.CENTER);
+		
+		JTextArea resultsArea = new JTextArea(15, 20);
+		resultsArea.setBorder(new TitledBorder("Solution"));
+		areas.add(resultsArea, BorderLayout.EAST);
+		
+		
+		JPanel checkers = new JPanel();
+		checkers.setLayout(new BoxLayout(checkers, BoxLayout.X_AXIS));
+		JButton check = new JButton("Check");
+		JCheckBox autoCheck = new JCheckBox("Auto Check", true);
+		checkers.add(check);
+		checkers.add(autoCheck);	
+		content.add(checkers, BorderLayout.SOUTH);
 		
 		// Could do this:
-		// setLocationByPlatform(true);
-		
+		setLocationByPlatform(true);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		pack();
 		setVisible(true);
