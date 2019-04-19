@@ -8,35 +8,58 @@ import java.awt.*;
 import java.awt.event.*;
 
 
+
  public class SudokuFrame extends JFrame {
+	 
+	 // private instance variables
+	 JTextArea puzzleArea;
+	 JTextArea resultsArea;
+	 JButton check;
+	 JCheckBox autoCheck;
+	 Sudoku sudo;
+	 
+	 
+	// calls sudoku solve method and changes result text;
+	private void solveSudoku() {
+		try {
+			String newText = "";
+			sudo = new Sudoku(puzzleArea.getText());
+			int solutions = sudo.solve();
+			
+			newText += sudo.getSolutionText() + "\n";
+			newText += "solutions: " + solutions + "\n";
+			newText += "elapsed: " + sudo.getElapsed() + "\n";
+			
+			resultsArea.setText(newText);
+		} catch (Exception e) {
+
+		}
+	}
+	
 	
 	public SudokuFrame() {
 		super("Sudoku Solver");
 		
-		JComponent content = (JComponent) getContentPane();
-		content.setLayout(new BorderLayout(4, 4));
+		setLayout(new BorderLayout(4, 4));
 		
-		
-		JComponent areas = new JPanel();
-		areas.setLayout(new BoxLayout(areas, BoxLayout.X_AXIS));
-		content.add(areas);
-		
-		JTextArea puzzleArea = new JTextArea(15, 20);
+		puzzleArea = new JTextArea(15, 20);
 		puzzleArea.setBorder(new TitledBorder("Puzzle"));
-		areas.add(puzzleArea, BorderLayout.CENTER);
+		add(puzzleArea, BorderLayout.CENTER);
 		
-		JTextArea resultsArea = new JTextArea(15, 20);
+		resultsArea = new JTextArea(15, 20);
 		resultsArea.setBorder(new TitledBorder("Solution"));
-		areas.add(resultsArea, BorderLayout.EAST);
+		add(resultsArea, BorderLayout.EAST);
 		
 		
 		JPanel checkers = new JPanel();
 		checkers.setLayout(new BoxLayout(checkers, BoxLayout.X_AXIS));
-		JButton check = new JButton("Check");
-		JCheckBox autoCheck = new JCheckBox("Auto Check", true);
+		check = new JButton("Check");
+		autoCheck = new JCheckBox("Auto Check", true);
 		checkers.add(check);
 		checkers.add(autoCheck);	
-		content.add(checkers, BorderLayout.SOUTH);
+		add(checkers, BorderLayout.SOUTH);
+		
+		addListeners();
 		
 		// Could do this:
 		setLocationByPlatform(true);
@@ -45,6 +68,47 @@ import java.awt.event.*;
 		setVisible(true);
 	}
 	
+	// listens events. after every events tries to solve sudoku
+	private void addListeners() {
+		// listens if is check button is clicked
+		check.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				solveSudoku();
+			}
+		});
+		
+		
+		// listens if puzzle text area changed and autoCheck is selected
+		puzzleArea.getDocument().addDocumentListener(new DocumentListener() {
+			
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				// TODO Auto-generated method stub
+				if(autoCheck.isSelected()) {
+					solveSudoku();
+				}
+				
+			}
+			
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				// TODO Auto-generated method stub
+				if(autoCheck.isSelected()) {
+					solveSudoku();
+				}
+			}
+			
+			@Override
+			public void changedUpdate(DocumentEvent arg0) {
+				// TODO Auto-generated method stub
+				if(autoCheck.isSelected()) {
+					solveSudoku();
+				}
+			}
+		});
+	}
 	
 	public static void main(String[] args) {
 		// GUI Look And Feel
