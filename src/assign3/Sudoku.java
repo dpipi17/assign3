@@ -136,7 +136,7 @@ public class Sudoku {
 	// solving hardGrid.
 	public static void main(String[] args) {
 		Sudoku sudoku;
-		sudoku = new Sudoku(easyGrid);
+		sudoku = new Sudoku(mediumGrid);
 		
 		System.out.println(sudoku); // print the raw problem
 		int count = sudoku.solve();
@@ -155,10 +155,16 @@ public class Sudoku {
 		solutionGrid = new int[SIZE][SIZE];
 		solutions = 0;
 		msRes = 0;
-		
+		// copying grid from ints to sudGrid
 		for(int row = 0; row < SIZE; row++) {
 			for(int col = 0; col < SIZE; col++) {
 				sudGrid[row][col] = ints[row][col];
+			}
+		}
+		
+		// creating spots
+		for(int row = 0; row < SIZE; row++) {
+			for(int col = 0; col < SIZE; col++) {
 				if(sudGrid[row][col] == 0) {
 					// create spots for only 0 values
 					Spot newSpot = new Spot(row, col);
@@ -304,25 +310,15 @@ public class Sudoku {
 			}
 			
 			// remove values which occurs in the same part
-			for(int newRow = 0; newRow < SIZE; newRow += 3) {
-				for(int newCol = 0; newCol < SIZE; newCol += 3) {
-					if(inPart(newRow, newCol)) {	
-						for(int i = newRow; i < newRow + PART; i++) {
-							for(int j = newCol; j < newCol + PART; j++) {
-								resultSet.remove(sudGrid[i][j]);								
-							}
-						}
-					}
+			int startRow = (row / 3) * PART;
+			int startCol = (col / 3) * PART;
+			for(int i = startRow; i < startRow + PART; i++) {
+				for(int j = startCol; j < startCol + PART; j++) {
+					resultSet.remove(sudGrid[i][j]);								
 				}
 			}
-			
+				
 			return resultSet;
-		}
-		
-		
-		// returns true if the spot is in this part
-		private boolean inPart(int partR, int partC) {
-			return (row >= partR && row < partR + PART && col >= partC && col < partC + PART);
 		}
 		
 		// changes value of the spot

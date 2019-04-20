@@ -27,12 +27,12 @@ import java.awt.event.*;
 			int solutions = sudo.solve();
 			
 			newText += sudo.getSolutionText() + "\n";
-			newText += "solutions: " + solutions + "\n";
+			newText += "solutions: " + solutions + " ms\n";
 			newText += "elapsed: " + sudo.getElapsed() + "\n";
 			
 			resultsArea.setText(newText);
 		} catch (Exception e) {
-
+			resultsArea.setText("invalid Input");
 		}
 	}
 	
