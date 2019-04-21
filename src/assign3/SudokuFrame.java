@@ -27,8 +27,8 @@ import java.awt.event.*;
 			int solutions = sudo.solve();
 			
 			newText += sudo.getSolutionText() + "\n";
-			newText += "solutions: " + solutions + " ms\n";
-			newText += "elapsed: " + sudo.getElapsed() + "\n";
+			newText += "solutions: " + solutions + "\n";
+			newText += "elapsed: " + sudo.getElapsed() + " ms\n";
 			
 			resultsArea.setText(newText);
 		} catch (Exception e) {
