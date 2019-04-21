@@ -17,38 +17,35 @@ import javax.swing.table.AbstractTableModel;
 public class TableModel extends AbstractTableModel{
 
 	//private instance variables
-	private ResultSet result;
-	private int numCol;
-	private int numRow;
 	private DB dataBase;
 	private Connection con;
 	
-	//
-	private static final int METRO_IND = 1;
-	private static final int CONT_IND = 2;
-	private static final int POP_IND = 3;
-	
-	
 	private final List<String> cols;
     private final List<List<String>> tableStruct;
+    
+    private static final int METRO_IND = 1;
+    private static final int CONT_IND = 2;
+    private static final int POP_IND = 3;
 
+    // constructor of the model Class
     public TableModel() {
         cols = new ArrayList<String>();
         tableStruct = new ArrayList<List<String>>();
         dataBase = new DB();
         	        
         addColumns();
-        addStartingTable();  
+        addFromDbToTable("SELECT * FROM metropolises");  
     }
     
-    private void addStartingTable() {
+    // adds all value from tableStruct into the Real Table
+    private void addFromDbToTable(String query) {
     	try {
 			Statement stmt;
 			con = dataBase.getCon();
 			stmt = con.createStatement();
 			stmt.executeQuery("USE " + DB.database);
 			
-			ResultSet rs = stmt.executeQuery("SELECT * FROM metropolises");
+			ResultSet rs = stmt.executeQuery(query);
 			
 			while (rs.next()) {
 				String metro = rs.getString("metropolis");
@@ -57,8 +54,8 @@ public class TableModel extends AbstractTableModel{
 				
 				addRow(Arrays.asList(metro, cont, pop));
 				
-				System.out.println(metro + "\t" + cont + " " +  pop);
 			}
+			dataBase.closeCon();
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -66,37 +63,32 @@ public class TableModel extends AbstractTableModel{
 		}
     }
     
+    // adds column names
     private void addColumns() {
     	addColumn("Metropolis");
         addColumn("Continent");
         addColumn("population");
     }
     
+    // returns row number
     @Override
     public int getRowCount() {
         return tableStruct.size();
     }
 
+    // returns column number
     @Override
     public int getColumnCount() {
         return cols.size();
     }
 
-    @Override
-    public String getColumnName(int i) {
-        return cols.get(i);
-    }
-
-    @Override
-    public Class<?> getColumnClass(int i) {
-        return String.class;
-    }
-
+    // makes table unchangeable
     @Override
     public boolean isCellEditable(int i, int j) {
         return false;
     }
 
+    // get value from the given coordinates
     @Override
     public Object getValueAt(int i, int j) {
         List<String> row = tableStruct.get(i);
@@ -107,7 +99,15 @@ public class TableModel extends AbstractTableModel{
         
         return null;
     }
+    
+    // gets column name using it index
+    @Override
+    public String getColumnName(int i) {
+        return cols.get(i);
+    }
 
+
+    // sets new value
     @Override
     public void setValueAt(Object o, int i, int j) {
         List<String> row = tableStruct.get(i);
@@ -123,23 +123,20 @@ public class TableModel extends AbstractTableModel{
         fireTableCellUpdated(i, j);
     }
 
+    // adds new column 
     public void addColumn(String colName) {
     	cols.add(colName);
         fireTableStructureChanged();
     }
     
-    public int addRow(List<String> row) {
-    	//System.out.println(11111);
+    // adds new row in the table
+    public void addRow(List<String> row) {
     	tableStruct.add(row);
         fireTableRowsInserted(tableStruct.size() - 1, tableStruct.size() - 1);
-        return tableStruct.size() - 1;
+
     }
     
-    public int addRow() {
-        List<String> row = new ArrayList<String>();
-        return addRow(row);
-    }
-    
+    // deletes row from the table    
     public void deleteRow(int rowIndex) {
         if (rowIndex < 0 || rowIndex > tableStruct.size() - 1) {
             return;
@@ -153,7 +150,9 @@ public class TableModel extends AbstractTableModel{
         fireTableRowsDeleted(rowIndex, rowIndex);
     }
    
-	
+	// add method
+    // adds new row in the data base and calls addRow function
+    // deletes other rows, because this is only row which should be visible now
 	public void add(String metro, String cont, String pop) {
 		// only add nonempty metropolis and continent rows
 		if(metro.isEmpty() || cont.isEmpty()) return;
@@ -179,7 +178,8 @@ public class TableModel extends AbstractTableModel{
 				deleteRow(tableStruct.size() - 1);
 				if(getRowCount() == 0) break;
 			}
-			addRow(Arrays.asList(metro, cont, pop));			
+			addRow(Arrays.asList(metro, cont, pop));
+			dataBase.closeCon();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -187,10 +187,43 @@ public class TableModel extends AbstractTableModel{
 		
 	}
 	
-	public ResultSet search(String metro, String cont, String pop, boolean larger, boolean exact) {
+	// creates String which is sql query using parameters
+	private String createQuery(String metro, String cont, String pop, boolean isAllEmpty, boolean larger, boolean exact) {
+		String result = "SELECT * FROM " + DB.database;
+		if(isAllEmpty) return result;
 		
+		result += " WHERE ";
+		// determines which we want exact or partial match
+		if(exact) {
+			result += "metropolis = '" + metro + "' AND continent = '" + cont + "'";
+		} else {
+			result += "metropolis LIKE '%" + metro + "%' AND continent LIKE '%" + cont + "%'";
+		}
 		
-		return null;
+		result += " AND ";
+		
+		// determines which we want larger than pop or "equal and smaller";
+		if(larger) {
+			result += "population > " + Long.valueOf(pop) + ";";
+		} else {
+			result += "population <= " + Long.valueOf(pop) + ";";
+		}
+		
+		return result;
+	}
+	
+	// search function
+	// calls createQuery to get sql query
+	// clears all row from the tableStruct to show only that rows which are returned by query
+	// calls addFromDbToTable to show query rows on the real Table
+	public void search(String metro, String cont, String pop, boolean larger, boolean exact) {
+		boolean isAllEmpty = metro.isEmpty() && cont.isEmpty() && pop.isEmpty();
+		
+		String query = createQuery(metro, cont, pop, isAllEmpty, larger, exact);
+		tableStruct.clear();
+		fireTableStructureChanged();
+		
+		addFromDbToTable(query);
 	}
 
 	
