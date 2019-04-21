@@ -202,6 +202,7 @@ public class TableModel extends AbstractTableModel{
 		
 		result += " AND ";
 		
+		if(pop.isEmpty()) pop = "0";
 		// determines which we want larger than pop or "equal and smaller";
 		if(larger) {
 			result += "population > " + Long.valueOf(pop) + ";";
